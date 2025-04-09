@@ -69,3 +69,48 @@ func TestParseDecimal(t *testing.T) {
 		})
 	}
 }
+
+func TestDecimalString(t *testing.T) {
+	tt := map[string]struct {
+		decimal  Decimal
+		expected string
+	}{
+		"15.2": {
+			decimal: Decimal{
+				subunits:  152,
+				precision: 1,
+			},
+			expected: "15.2",
+		},
+		"0.0152": {
+			decimal: Decimal{
+				subunits:  152,
+				precision: 4,
+			},
+			expected: "0.0152",
+		},
+		"152": {
+			decimal: Decimal{
+				subunits:  152,
+				precision: 0,
+			},
+			expected: "152",
+		},
+		"152.00": {
+			decimal: Decimal{
+				subunits:  15200,
+				precision: 2,
+			},
+			expected: "152.00",
+		},
+	}
+
+	for name, tc := range tt {
+		t.Run(name, func(t *testing.T) {
+			got := tc.decimal.String()
+			if got != tc.expected {
+				t.Errorf("expected %q, got %q", tc.expected, got)
+			}
+		})
+	}
+}
