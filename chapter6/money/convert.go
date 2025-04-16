@@ -1,9 +1,20 @@
 package money
 
-func Convert(amount Amount, to Currency) (Amount, error) {
-	convertedValue := applyExchangeRate(amount, to, ExchangeRate{2, 0})
+import "fmt"
+
+type ratesFetcher interface {
+	FetchExchangeRates(source, target Currency) (ExchangeRate, error)
+}
+
+func Convert(amount Amount, to Currency, rates ratesFetcher) (Amount, error) {
+	r, err := rates.FetchExchangeRates(amount.currency, to)
+	if err != nil {
+		return Amount{}, fmt.Errorf("cannot get exchange rate: %w", err)
+	}
+
+	convertedValue := applyExchangeRate(amount, to, r)
 	if err := convertedValue.validate(); err != nil {
-		return Amount{}, nil
+		return Amount{}, err
 	}
 
 	return convertedValue, nil
