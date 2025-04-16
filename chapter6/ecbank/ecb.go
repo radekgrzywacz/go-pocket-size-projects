@@ -1,24 +1,31 @@
 package ecbank
 
 import (
+	"errors"
 	"fmt"
 	"learngo-pockets/moneyconverter/money"
 	"net/http"
+	"net/url"
+	"time"
 )
 
 type Client struct {
-	url string
+	client http.Client
+}
+
+func NewClient(timeout time.Duration) Client {
+	return Client{client: http.Client{Timeout: timeout}}
 }
 
 func (c Client) FetchExchangeRates(source, target money.Currency) (money.ExchangeRate, error) {
 	const path = "http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml"
 
-	if c.url == "" {
-		c.url = path
-	}
-
-	resp, err := http.Get(path)
+	resp, err := c.client.Get(path)
 	if err != nil {
+		var urlErr *url.Error
+		if ok := errors.As(err, &urlErr); ok && urlErr.Timeout() {
+			return money.ExchangeRate{}, fmt.Errorf("%w: %s", ErrTimeout, err.Error())
+		}
 		return money.ExchangeRate{}, fmt.Errorf("%w: %s", http.ErrServerClosed, err.Error())
 	}
 
@@ -47,6 +54,7 @@ const (
 	ErrClientSide         = ecbankError("client side error when contacting ECB")
 	ErrServerSide         = ecbankError("server side error when contacting ECB")
 	ErrUnknownStatusCode  = ecbankError("unknown status code contacting ECB")
+	ErrTimeout            = ecbankError("timed out when waiting for response")
 )
 
 func checkStatusCode(statusCode int) error {

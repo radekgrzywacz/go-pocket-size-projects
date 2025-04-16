@@ -6,6 +6,7 @@ import (
 	"learngo-pockets/moneyconverter/ecbank"
 	"learngo-pockets/moneyconverter/money"
 	"os"
+	"time"
 )
 
 func main() {
@@ -25,7 +26,7 @@ func main() {
 
 	amount := parseAmount(from)
 
-	rates := ecbank.Client{}
+	rates := ecbank.NewClient(30 * time.Second)
 
 	// convert the amount from the source currency to the target with the current exchange rate
 	convertedAmount, err := money.Convert(amount, toCurrency, rates)
