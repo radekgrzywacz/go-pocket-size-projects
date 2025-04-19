@@ -1,15 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"learngo/httpgordle/internal/handlers"
 	"net/http"
 	"os"
 )
 
 func main() {
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":8080", handlers.Mux())
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
