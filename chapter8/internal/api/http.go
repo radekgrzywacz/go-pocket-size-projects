@@ -1,11 +1,15 @@
 package api
 
-import "net/http"
-
 const (
-	NewGameRoute  = "/games"
-	NewGameMethod = http.MethodPost
+	GameID         = "id"
+	NewGameRoute   = "/games"
+	GetStatusRoute = "/games/{" + GameID + "}"
+	GuessRoute     = "/games/{" + GameID + "}"
 )
+
+type GuessRequest struct {
+	Guess string `json:"guess"`
+}
 
 // GameResponse contains the information about a game.
 type GameResponse struct {
