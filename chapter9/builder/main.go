@@ -1,30 +1,32 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
 	"log"
 	"math/rand"
 	"os"
+	"strconv"
 )
 
 func main() {
-	// if len(os.Args) < 3 {
-	// 	log.Fatal("Usage: go run . <width> <height>")
-	// }
-	// width, err := strconv.Atoi(os.Args[1])
-	// if err != nil {
-	// 	log.Fatal("Invalid width:", err)
-	// }
-	// height, err := strconv.Atoi(os.Args[2])
-	// if err != nil {
-	// 	log.Fatal("Invalid height:", err)
-	// }
+	if len(os.Args) < 3 {
+		log.Fatal("Usage: go run . <width> <height>")
+	}
+	width, err := strconv.Atoi(os.Args[1])
+	if err != nil {
+		log.Fatal("Invalid width:", err)
+	}
+	height, err := strconv.Atoi(os.Args[2])
+	if err != nil {
+		log.Fatal("Invalid height:", err)
+	}
 
-	maze := createMaze(20, 20)
+	maze := createMaze(width, height)
 
-	file, err := os.Create("maze.png")
+	file, err := os.Create(fmt.Sprintf("../solver/mazes/maze%d_%d.png", width, height))
 	if err != nil {
 		log.Fatal("Failed to create file:", err)
 	}
@@ -64,7 +66,7 @@ func createMaze(width int, height int) image.RGBA {
 	if entrance.y > height {
 		log.Fatalf("Wrong entrance")
 	}
-	cells[entrance.x][entrance.y] = entrance
+	cells[entrance.y][entrance.x] = entrance
 	colorEntrance(entrance, img, colors)
 
 	treasurePlaced := false
@@ -76,7 +78,7 @@ func createMaze(width int, height int) image.RGBA {
 
 func generateMaze(x, y int, width int, height int, cells [][]cell, img *image.RGBA, treasurePlaced *bool) {
 	colors := defaultColors()
-	cells[x][y].visited = true
+	cells[y][x].visited = true
 	setCell(x, y, img, colors.pathColor)
 
 	if x == width-1 && !*treasurePlaced {
@@ -99,7 +101,7 @@ func generateMaze(x, y int, width int, height int, cells [][]cell, img *image.RG
 	for _, dir := range directions {
 		newX, newY := x+dir[0], y+dir[1]
 
-		if newX >= 0 && newX < width && newY >= 0 && newY < height && !cells[newX][newY].visited {
+		if newX >= 0 && newX < width && newY >= 0 && newY < height && !cells[newY][newX].visited {
 			carvePath(x, y, newX, newY, img, colors.pathColor)
 			generateMaze(newX, newY, width, height, cells, img, treasurePlaced)
 		}
