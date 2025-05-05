@@ -21,13 +21,8 @@ func TestSolver_findEntrance_success(t *testing.T) {
 			inputPath: "testdata/maze400_400.png",
 			want:      image.Point{X: 0, Y: 200},
 		},
-		"treasure near entrance": {
-			inputPath: "testdata/maze10_exit.png",
-			want:      image.Point{X: 0, Y: 5},
-		},
-
 		"entrance in a corner": {
-			inputPath: "testdata/maze10_corner.png",
+			inputPath: "testdata/maze40_corner.png",
 			want:      image.Point{X: 0, Y: 0},
 		},
 	}

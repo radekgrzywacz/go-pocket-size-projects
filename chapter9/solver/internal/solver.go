@@ -6,11 +6,15 @@ import (
 	"image/png"
 	"log"
 	"os"
+	"sync"
 )
 
 type Solver struct {
-	maze    *image.RGBA
-	palette palette
+	maze           *image.RGBA
+	palette        palette
+	pathsToExplore chan *path
+	solution       *path
+	mutex          sync.Mutex
 }
 
 func New(imagePath string) (*Solver, error) {
@@ -22,6 +26,7 @@ func New(imagePath string) (*Solver, error) {
 	return &Solver{
 		maze:    img,
 		palette: defaultPalette(),
+		pathsToExplore: make(chan *path, 1),
 	}, nil
 }
 
@@ -32,6 +37,8 @@ func (s *Solver) Solve() error {
 	}
 
 	log.Printf("starting at %v", entrance)
+	s.pathsToExplore <- &path{previousStep: nil, at: cell{entrance.X + 4, entrance.Y + 4}}
+	s.listenToBranches()
 	file, err := os.Create("output.png")
 	if err != nil {
 		log.Fatal("Failed to create file:", err)

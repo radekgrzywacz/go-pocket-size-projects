@@ -29,3 +29,8 @@ go.work.sum
 
 ### JetBrains ###
 **/.idea
+
+### VS CODE ###
+.vscode
+
+./chapter6/convert

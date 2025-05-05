@@ -83,6 +83,7 @@ func generateMaze(x, y int, width int, height int, cells [][]cell, img *image.RG
 
 	if x == width-1 && !*treasurePlaced {
 		colorFinish(x, y, img, colors, width)
+		setCell(x, y, img, colors.treasureColor)
 		*treasurePlaced = true
 		return
 	}
