@@ -24,8 +24,8 @@ func New(imagePath string) (*Solver, error) {
 	}
 
 	return &Solver{
-		maze:    img,
-		palette: defaultPalette(),
+		maze:           img,
+		palette:        defaultPalette(),
 		pathsToExplore: make(chan *path, 1),
 	}, nil
 }
@@ -37,7 +37,8 @@ func (s *Solver) Solve() error {
 	}
 
 	log.Printf("starting at %v", entrance)
-	s.pathsToExplore <- &path{previousStep: nil, at: cell{entrance.X + 4, entrance.Y + 4}}
+	s.pathsToExplore <- &path{previousStep: nil, at: cell{entrance.X, entrance.Y}}
+
 	s.listenToBranches()
 	file, err := os.Create("output.png")
 	if err != nil {

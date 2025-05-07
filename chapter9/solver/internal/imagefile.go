@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/color"
 	"image/png"
 	"log"
+	"math"
 	"os"
 )
 
@@ -41,9 +43,11 @@ func (s *Solver) SaveSolution(outputPath string) error {
 	}()
 
 	stepsFromTreasure := s.solution
-	for stepsFromTreasure != nil {
-		pixel := cellToPixel(stepsFromTreasure.at.X, stepsFromTreasure.at.Y)
-		s.maze.Set(pixel.X, pixel.Y, s.palette.solution)
+	for stepsFromTreasure != nil && stepsFromTreasure.previousStep != nil {
+		from := cellToPixel(stepsFromTreasure.at.X, stepsFromTreasure.at.Y)
+		to := cellToPixel(stepsFromTreasure.previousStep.at.X, stepsFromTreasure.previousStep.at.Y)
+	
+		drawLine(s.maze, from, to, s.palette.solution)
 		stepsFromTreasure = stepsFromTreasure.previousStep
 	}
 
@@ -53,4 +57,22 @@ func (s *Solver) SaveSolution(outputPath string) error {
 	}
 	log.Print("Saved")
 	return nil
+}
+
+func drawLine(img *image.RGBA, from, to image.Point, clr color.Color) {
+	dx := to.X - from.X
+	dy := to.Y - from.Y
+	steps := int(math.Max(math.Abs(float64(dx)), math.Abs(float64(dy))))
+
+	if steps == 0 {
+		img.Set(from.X, from.Y, clr)
+		return
+	}
+
+	for i := 0; i <= steps; i++ {
+		t := float64(i) / float64(steps)
+		x := int(math.Round(float64(from.X) + t*float64(dx)))
+		y := int(math.Round(float64(from.Y) + t*float64(dy)))
+		img.Set(x, y, clr)
+	}
 }
