@@ -11,6 +11,7 @@ type palette struct {
 	entrance color.RGBA
 	treasure color.RGBA
 	solution color.RGBA
+	explored color.RGBA
 }
 
 func defaultPalette() palette {
@@ -20,12 +21,13 @@ func defaultPalette() palette {
 		entrance: color.RGBA{R: 0, G: 191, B: 255, A: 255},
 		treasure: color.RGBA{R: 255, G: 0, B: 128, A: 255},
 		solution: color.RGBA{R: 255, G: 0, B: 0, A: 255},
+		explored: color.RGBA{R: 0, G: 0, B: 255, A: 255},
 	}
 }
 
 func setCell(cellX int, cellY int, img *image.RGBA, rgba color.RGBA) {
-	pixelX := 2 + cellX*10 // convert cell to pixel
-	pixelY := 2 + cellY*10 // convert cell to pixel
+	pixelX := 2 + cellX*10 
+	pixelY := 2 + cellY*10 
 
 	for i := 0; i < 8; i++ {
 		for j := 0; j < 8; j++ {

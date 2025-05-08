@@ -4,13 +4,25 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"sync"
 )
 
 func (s *Solver) listenToBranches() {
-	for p := range s.pathsToExplore {
-		go s.explore(p)
-		if s.solutionFound() {
+	wg := sync.WaitGroup{}
+	defer wg.Wait()
+
+	for {
+		select {
+		case <-s.quit:
+			log.Printf("The treasure has been found, stopping worker")
 			return
+		case p := <-s.pathsToExplore:
+			wg.Add(1)
+			go func(path *path) {
+				defer wg.Done()
+
+				s.explore(path)
+			}(p)
 		}
 	}
 }
@@ -22,14 +34,19 @@ func (s *Solver) solutionFound() bool {
 }
 
 func (s *Solver) explore(pathToBranch *path) {
-	log.Printf("In explore")
 	if pathToBranch == nil {
 		return
 	}
 
 	pos := pathToBranch.at
 
-	for !s.solutionFound() {
+	for {
+		select {
+		case <-s.quit:
+			return
+		case s.exploredPixels <- pos:
+		}
+
 		candidates := make([]cell, 0, 3)
 		for _, n := range neighbours(pos) {
 			if pathToBranch.isPreviousStep(n) {
@@ -45,6 +62,7 @@ func (s *Solver) explore(pathToBranch *path) {
 					defer s.mutex.Unlock()
 					s.solution = &path{previousStep: pathToBranch, at: n}
 					log.Printf("Treasure found at %v", pos)
+					close(s.quit)
 					return
 				}
 				candidates = append(candidates, n)
@@ -59,7 +77,12 @@ func (s *Solver) explore(pathToBranch *path) {
 
 		for _, candidate := range candidates[1:] {
 			branch := &path{previousStep: pathToBranch, at: candidate}
-			s.pathsToExplore <- branch
+			select {
+			case <-s.quit:
+				log.Printf("Another branch found the treasure")
+				return
+			case s.pathsToExplore <- branch:
+			}
 		}
 
 		pathToBranch = &path{previousStep: pathToBranch, at: candidates[0]}
@@ -78,7 +101,6 @@ func isConnected(a, b image.Point, maze *image.RGBA, pathColor color.RGBA) bool 
 	}
 	return maze.RGBAAt(mid.X, mid.Y) == pathColor
 }
-
 
 func isTreasure(c cell, maze *image.RGBA, treasureColor color.RGBA) bool {
 	p := cellToPixel(c.X, c.Y)

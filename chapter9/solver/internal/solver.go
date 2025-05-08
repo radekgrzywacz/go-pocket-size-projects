@@ -3,9 +3,8 @@ package solver
 import (
 	"fmt"
 	"image"
-	"image/png"
+	"image/gif"
 	"log"
-	"os"
 	"sync"
 )
 
@@ -15,6 +14,9 @@ type Solver struct {
 	pathsToExplore chan *path
 	solution       *path
 	mutex          sync.Mutex
+	quit           chan struct{}
+	exploredPixels chan cell
+	animation      *gif.GIF
 }
 
 func New(imagePath string) (*Solver, error) {
@@ -27,6 +29,9 @@ func New(imagePath string) (*Solver, error) {
 		maze:           img,
 		palette:        defaultPalette(),
 		pathsToExplore: make(chan *path, 1),
+		quit:           make(chan struct{}),
+		exploredPixels: make(chan cell),
+		animation:      &gif.GIF{},
 	}, nil
 }
 
@@ -38,18 +43,38 @@ func (s *Solver) Solve() error {
 
 	log.Printf("starting at %v", entrance)
 	s.pathsToExplore <- &path{previousStep: nil, at: cell{entrance.X, entrance.Y}}
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	defer wg.Wait()
+	go func() {
+		defer wg.Done()
+		s.registerExploredPixels()
+	}()
 
-	s.listenToBranches()
-	file, err := os.Create("output.png")
-	if err != nil {
-		log.Fatal("Failed to create file:", err)
-	}
-	defer file.Close()
-	if err := png.Encode(file, s.maze); err != nil {
-		log.Fatal("Failed to encode PNG:", err)
-	}
+	go func() {
+		defer wg.Done()
+		s.listenToBranches()
+	}()
+
+	wg.Wait()
+
+	s.writeLastFrame()
 
 	return nil
+}
+
+func (s *Solver) writeLastFrame() {
+	stepsFromTreasure := s.solution
+	for stepsFromTreasure != nil && stepsFromTreasure.previousStep != nil {
+		from := cellToPixel(stepsFromTreasure.at.X, stepsFromTreasure.at.Y)
+		to := cellToPixel(stepsFromTreasure.previousStep.at.X, stepsFromTreasure.previousStep.at.Y)
+		drawLine(s.maze, from, to, s.palette.solution)
+		stepsFromTreasure = stepsFromTreasure.previousStep
+	}
+	const solutionFrameDuration = 300 // 3 seconds
+	s.drawCurrentFrameToGIF()
+	s.animation.Delay[len(s.animation.Delay)-1] = solutionFrameDuration
+	log.Printf("Added final solution frame")
 }
 
 func (s *Solver) findEntrance() (image.Point, error) {
@@ -64,4 +89,14 @@ func (s *Solver) findEntrance() (image.Point, error) {
 	}
 
 	return image.Point{}, fmt.Errorf("entrance position not found")
+}
+
+func (s *Solver) markAsExplored(pos cell) {
+	px := 2 + pos.X*10
+	py := 2 + pos.Y*10
+	for i := 0; i < 8; i++ {
+		for j := 0; j < 8; j++ {
+			s.maze.Set(px+i, py+j, s.palette.explored)
+		}
+	}
 }
